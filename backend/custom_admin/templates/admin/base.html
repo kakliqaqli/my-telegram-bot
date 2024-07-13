@@ -1,0 +1,47 @@
+{% extends "admin/base.html" %}
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        if (!window.hasInitializedSocket) {
+            const audio = new Audio("{{ FORCE_SCRIPT_NAME }}/sounds/notification_default.wav");
+            const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            const socket = new WebSocket(`${wsProtocol}//` + window.location.host + "{{ FORCE_SCRIPT_NAME }}/ws/admin/notifications/");
+            socket.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                toastr.options = {
+                    "closeButton": true,
+                    "progressBar": true,
+                    "positionClass": "toast-bottom-right",
+                    "timeOut": "5000"
+                };
+                console.log(data);
+                if (data.message.text) {
+                    switch (data.message.level.toUpperCase()) {
+                        case "WARN":
+                            toastr.warning(data.message.text);
+                            break;
+                        case "INFO":
+                            toastr.info(data.message.text);
+                            break;
+                        case "ERROR":
+                            toastr.error(data.message.text);
+                            break;
+                        case "SUCCESS":
+                            toastr.success(data.message.text);
+                            break;
+                        default:
+                            toastr.info(data.message.text);
+                    }
+
+                    audio.play();
+
+                }
+
+            };
+            window.hasInitializedSocket = true;
+        }
+    </script>
+{% endblock %}

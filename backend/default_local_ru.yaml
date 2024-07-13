@@ -1,0 +1,172 @@
+translate:
+  MainWindow_order_button:
+    title: Кнопка заказа
+    description: Кнопка заказа на главном экране
+  MainWindow_reg_driver_button:
+    title: Кнопка регистрации водителя
+    description: Кнопка регистрации водителя на главном экране
+  MainWindow_search_orders_button:
+    title: Кнопка поиска заказов
+    description: Кнопка поиска заказов на главном экране
+  MainWindow_profile_button:
+    title: Кнопка профиля
+    description: Кнопка профиля на главном экране
+  main_subscription_button:
+    title: Кнопка подписки
+    description: Кнопка подписки на главном экране
+  DriverProfile_photo:
+    title: Фото
+    description: Текст кнопки изменения фото
+  DriverProfile_fullname:
+    title: ФИО
+    description: Текст кнопки изменения ФИО
+  DriverProfile_car_number:
+    title: Номер машины
+    description: Текст кнопки изменения номера машины
+  DriverProfile_input_value:
+    title: Введите значение
+    description: Текст сообщения для ввода значения
+  DriverProfile_back:
+    title: Назад
+    description: Текст кнопки возврата назад
+  DriverReg_send_photo:
+    title: Отправьте фото
+    description: Текст сообщения для отправки фото
+  DriverReg_enter_fullname:
+    title: Введите свое ФИО
+    description: Текст сообщения для ввода ФИО
+  DriverReg_enter_car_number:
+    title: Введите номер машины
+    description: Текст сообщения для ввода номера машины
+  DriverSearch_send_location:
+    title: Чтобы поиск начался отправьте ваше местоположение
+    description: Текст сообщения для отправки местоположения
+  DriverSearch_searching_passenger:
+    title: Идет поиск пассажира...
+    description: Текст сообщения для поиска пассажира
+  DriverSearch_take_order:
+    title: Взять
+    description: Текст кнопки для взятия заказа
+  DriverSearch_next_order:
+    title: Следующий
+    description: Текст кнопки для перехода к следующему заказу
+  DriverSearch_cancel_search:
+    title: Отменить поиск
+    description: Текст кнопки для отмены поиска
+  DriverSearch_go_to_passenger:
+    title: Отправляйтесь к пассажиру когда прибудете нажмите на кнопку "Я прибыл"
+    description: Текст сообщения для отправки к пассажиру
+  DriverSearch_start_ride:
+    title: Как только пассажир придет нажмите на кнопку "Начать поездку"
+    description: Текст сообщения для начала поездки
+  DriverSearch_end_ride:
+    title: Когда доедете нажмите на кнопку "Закончить поездку"
+    description: Текст сообщения для завершения поездки
+  DriverSearch_arrived:
+    title: Я прибыл
+    description: Текст кнопки для подтверждения прибытия
+  DriverSearch_start_trip:
+    title: Начать поездку
+    description: Текст кнопки для начала поездки
+  DriverSearch_finish_trip:
+    title: Закончить поездку
+    description: Текст кнопки для завершения поездки
+  DriverSearch_cancel_trip:
+    title: Отменить поездку
+    description: Текст кнопки для отмены поездки
+  DriverSearch_trip_complete:
+    title: Поездка завершена
+    description: Текст сообщения о завершении поездки
+  DriverSearch_take_another_trip:
+    title: Взять еще поездку
+    description: Текст кнопки для взятия еще одной поездки
+  DriverSearch_finish:
+    title: Завершить
+    description: Текст кнопки для завершения
+  DriverSearch_price:
+    title: 'Цена:'
+    description: Текст для отображения цены
+  DriverSearch_distance:
+    title: 'Дистанция:'
+    description: Текст для отображения дистанции
+  DriverSearch_route:
+    title: 'Маршрут:'
+    description: Текст для отображения маршрута
+  MainGreeting:
+    title: Здраствуйте, это бот такси
+    description: Приветственное сообщение
+  MainQuestion:
+    title: Что выберите?
+    description: Сообщение с вопросом о выборе действия
+  OrderWebAppPrompt:
+    title: Откройте веб апп чтобы заказать такси
+    description: Сообщение для открытия веб-приложения для заказа такси
+  OrderWebAppButton:
+    title: Заказать
+    description: Кнопка открытия вебаппа
+  OrderSearchingDriver:
+    title: Идет поиск водителя...
+    description: Сообщение о поиске водителя
+  OrderIncreasePrice:
+    title: Повысить цену
+    description: Текст кнопки для повышения цены
+  OrderCancelSearch:
+    title: Отменить поиск
+    description: Текст кнопки для отмены поиска
+  OrderDriverEnRoute:
+    title: Водитель уже едет к вам!
+    description: Сообщение о прибытии водителя
+  OrderDriverArrived:
+    title: Водитель на месте и ждет вас
+    description: Сообщение о прибытии водителя на место
+  OrderHaveANiceTrip:
+    title: Удачной поездки!
+    description: Сообщение пожелания удачной поездки
+  OrderDriver:
+    title: "Водитель:"
+    description: Текст для отображения информации о водителе
+  OrderCarNumber:
+    title: "Номер машины:"
+    description: Текст для отображения номера машины
+  OrderCancelRide:
+    title: Отменить поездку
+    description: Текст кнопки для отмены поездки
+  OrderTripEnded:
+    title: Поездка окончена, можете поставить оценку и написать отзыв!
+    description: Сообщение об окончании поездки и возможности оставить отзыв
+  OrderSendReview:
+    title: Отправить отзыв
+    description: Текст кнопки для отправки отзыва
+  OrderSkipReview:
+    title: Пропустить
+    description: Текст кнопки для пропуска отзыва
+  OrderDistance:
+    title: "Дистанция:"
+    description: Текст для отображения дистанции
+  OrderPrice:
+    title: "Цена:"
+    description: Текст для отображения цены
+  PayChooseSubscription:
+    title: Выберите подписку
+    description: Сообщение для выбора подписки
+  PayInstructions:
+    title: 'Оплатите по реквизитам и нажмите на кнопку:'
+    description: Инструкция по оплате
+  PayConfirmation:
+    title: Я оплатил
+    description: Текст кнопки для подтверждения оплаты
+  UserRegEnterPhone:
+    title: Введите ваш номер телефона
+    description: Сообщение для ввода номера телефона
+  UserRegShareContact:
+    title: Нажмите чтобы поделиться
+    description: Текст кнопки для обмена контактом
+  TripCancelled:
+    title: Поездка была отменена
+    description: Сообщение об отмене поездки
+  NotificationAcceptDriver:
+    title: Ваш аккаунт водителя подтвержден
+    description: Сообщение о подтверждении аккаунта водителя
+  SuccessRegisteredDriver:
+    title: Вы успешно зарегистрировались, ожидайте подтверждения от администратора
+    description: Сообщение об ожидании подтверждении аккаунта водителя

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, NOCACHE">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=0931fc54-ff35-4374-966c-630d48afe647&suggest_apikey=36618355-c62a-4793-b4ac-ceb5415a5e71"></script>
+    <style>
+        @media (min-width: 600px) {
+            * {
+                color: var(--tg-theme-text-color);
+                overflow: hidden;
+
+            }
+
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                overflow: hidden;
+                background-color: var(--tg-theme-bg-color);
+                font-family: Arial, sans-serif;
+            }
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            width: 80%;
+            overflow: hidden;
+
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 100% !important;
+                display: unset !important;
+
+
+            }
+
+            .container .map-container {
+                height: 100% !important;
+                width: 100% !important;
+                position: absolute;
+                flex: unset !important;
+                right: 0;
+                bottom: 0;
+            }
+
+            .container .input-container {
+                position: absolute;
+                width: 100vw !important;
+                z-index: 1;
+                box-sizing: border-box;
+                right: 0;
+                bottom: 0;
+                border-radius: 15px 15px 0 0;
+
+            }
+        }
+
+        .input-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-height: 80%;
+            gap: 10px;
+            background-color: var(--tg-theme-bg-color);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #from, #to {
+            background-color: var(--tg-theme-secondary-bg-color);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            color: var(--tg-theme-text-color);
+            border: unset;
+        }
+
+        .error {
+            border: solid 1px red !important;
+        }
+
+        #suggestions-from, #suggestions-to {
+            color: var(--tg-theme-text-color);
+            background-color: var(--color-text-lighter);
+            border-radius: 5px;
+            max-height: 100px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .map-container {
+            flex: 2;
+            height: 33vh;
+            background-color: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="input-container">
+        <input type="text" id="from" placeholder="Откуда...">
+        <div id="suggestions-from"></div>
+        <input type="text" id="to" placeholder="Куда...">
+        <div id="suggestions-to"></div>
+    </div>
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+</div>
+
+<script>
+    var app
+    document.addEventListener("DOMContentLoaded", () => {
+        app = new GeoApp();
+        app.init();
+    });
+
+    class GeoApp {
+        constructor() {
+            this.map = null;
+            this.from = {coords: null, address: null};
+            this.to = {coords: null, address: null};
+            this.fromMarker = null;
+            this.toMarker = null;
+            this.route = null;
+            this.routeData = null;
+        }
+
+        init() {
+            this.setupTelegramButton();
+            this.initMap();
+        }
+
+        setupTelegramButton() {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.MainButton.show();
+            window.Telegram.WebApp.MainButton.text = 'Заказать';
+            window.Telegram.WebApp.MainButton.enable();
+            window.Telegram.WebApp.onEvent('mainButtonClicked', () => {
+                let valid = true;
+                console.log('sdfsdfsdfsdf')
+                if (Object.values(this.from).includes(null)) {
+                    document.getElementById('from').classList.add('error')
+                    valid = false
+                }
+                if (Object.values(this.to).includes(null)) {
+                    document.getElementById('to').classList.add('error')
+                    valid = false
+                }
+                console.log(!valid)
+                if (!valid) {
+                    window.Telegram.WebApp.showAlert('Извините, вы не заполнили поля или не построили маршрут на карте')
+                    return
+                }
+                console.log(this.routeData)
+                const params = {
+                    from: this.from,
+                    to: this.to,
+                    route: this.routeData,
+                    user_id: window.Telegram.WebApp.initDataUnsafe.user.id
+                };
+                const options = {
+                    method: 'POST',
+                    body: JSON.stringify(params),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+
+                fetch('{{ api_send_order_url }}', options)
+                    .then(response => {
+                        if (response.status !== 200) {
+                            console.error('Ошибка: статус ответа', response.status);
+                            return;
+                        }
+                        window.Telegram.WebApp.close();
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                    });
+                //window.Telegram.WebApp.sendData(JSON.stringify({
+                //    from: this.from,
+                //    to: this.to
+                //}));
+            });
+        }
+
+        initMap() {
+            ymaps.ready().then(() => {
+                this.map = new ymaps.Map("map", {
+                    center: [55.76, 37.64],
+                    zoom: 10,
+                    controls: []
+                });
+                //this.map.layers.add(new ymaps.Layer('https://core-renderer-tiles.maps.yandex.net/tiles?l=map&v=24.06.07-0-b240606123130&x=%x&y=%y&z=%z&scale=2&lang=ru_RU&apikey=ac5e7c55-acc8-415a-9ab7-906a46cf1a26&theme=dark', {
+                //    projection: ymaps.projection.sphericalMercator
+                //}));
+                navigator.geolocation.getCurrentPosition(position => {
+                    const coords = [position.coords.latitude, position.coords.longitude];
+                    ymaps.geocode(coords).then(res => {
+                        const address = res.geoObjects.get(0).getAddressLine();
+                        this.from.address = address;
+                        this.from.coords = coords;
+                        this.addMarker(coords, address, 'from');
+                        document.getElementById('from').value = address;
+                        this.map.setCenter(coords, 10);
+                    });
+                }, () => {
+                    console.log("Geolocation is not supported by this browser.");
+                });
+
+                this.addEventListeners();
+            });
+        }
+
+        addEventListeners() {
+            const fromInput = document.getElementById('from');
+            const toInput = document.getElementById('to');
+            fromInput.addEventListener('input', () => this.handleInput(fromInput, 'from'));
+            toInput.addEventListener('input', () => this.handleInput(toInput, 'to'));
+
+            this.map.events.add('click', e => this.handleMapClick(e));
+        }
+
+        handleInput(input, type) {
+            document.getElementById(type).classList.remove('error')
+            const query = input.value;
+            if (query.length > 2) {
+                ymaps.suggest(query).then(items => {
+                    const suggestionsContainer = document.getElementById(`suggestions-${type}`);
+                    suggestionsContainer.innerHTML = items.map(item => `<div class='suggestion-item' onclick='app.selectSuggestion("${item.value}", "${type}")'>${item.displayName}</div>`).join('');
+                    suggestionsContainer.style.display = 'block';
+                });
+            }
+        }
+
+        selectSuggestion(value, type) {
+            document.getElementById(`suggestions-${type}`).style.display = 'none';
+            ymaps.geocode(value).then(res => {
+                const coords = res.geoObjects.get(0).geometry.getCoordinates();
+                const address = res.geoObjects.get(0).getAddressLine();
+                document.getElementById(type).value = address;
+                this.updateLocation(coords, address, type);
+            });
+        }
+
+        addMarker(coords, label, type) {
+            const oldMarker = type === 'from' ? this.fromMarker : this.toMarker;
+            if (oldMarker) {
+                this.map.geoObjects.remove(oldMarker);
+            }
+
+            const marker = new ymaps.Placemark(coords, {balloonContent: label}, {
+                preset: 'islands#blueDotIcon',
+                draggable: true
+            });
+            marker.events.add('dragend', e => this.handleDragEnd(e, type));
+            this.map.geoObjects.add(marker);
+
+            if (type === 'from') {
+                this.fromMarker = marker;
+            } else {
+                this.toMarker = marker;
+            }
+            this.updateLocation(coords, label, type);
+        }
+
+        handleDragEnd(event, type) {
+            const coords = event.get('target').geometry.getCoordinates();
+            ymaps.geocode(coords).then(res => {
+                const address = res.geoObjects.get(0).getAddressLine();
+                document.getElementById(type).value = address;
+                this.updateLocation(coords, address, type);
+            });
+        }
+
+        updateLocation(coords, address, type) {
+            if (type === 'from') {
+                this.from.coords = coords;
+                this.from.address = address;
+            } else {
+                this.to.coords = coords;
+                this.to.address = address;
+            }
+            this.updateRoute();
+        }
+
+        handleMapClick(event) {
+            const coords = event.get('coords');
+            ymaps.geocode(coords).then(res => {
+                const address = res.geoObjects.get(0).getAddressLine();
+                if (!this.from.coords) {
+                    this.updateLocation(coords, address, 'from');
+                    document.getElementById('from').classList.remove('error')
+                    document.getElementById('from').value = address;
+                } else if (!this.to.coords) {
+                    this.updateLocation(coords, address, 'to');
+                    document.getElementById('to').classList.remove('error')
+                    document.getElementById('to').value = address;
+                }
+            });
+        }
+
+        _reducePoints(points, maxPoints) {
+            const step = Math.ceil(points.length / maxPoints);
+            return points.filter((point, index) => index % step === 0);
+        }
+
+        storageRouteData() {
+            const distance = this.route.getLength() / 1000;
+            const coords = this.route.getPaths().get(0).getSegments().map(segment => segment.getCoordinates()).flat();
+            const reducedCoords = this._reducePoints(coords, 100);
+            const pl_coords = reducedCoords.map(coord => [...coord].reverse().join(",")).join(",");
+            const fromCoords = [...this.from.coords].reverse().join(",");
+            const toCoords = [...this.to.coords].reverse().join(",");
+            const map_url = `https://static-maps.yandex.ru/1.x/?l=map&pl=${pl_coords}&pt=${fromCoords},pm2al~${toCoords},pm2bl&size=650,450`;
+            this.routeData = {
+                distance: distance.toFixed(2),
+                map_url: map_url
+            };
+        }
+
+        updateRoute() {
+            if (this.from.coords && this.to.coords && !this.route) {
+                ymaps.route([this.from.coords, this.to.coords]).then(route => {
+                    route.getPaths().options.set({
+                        strokeColor: '0000ffff',
+                        opacity: 0.9
+                    });
+                    this.map.geoObjects.removeAll()
+                    this.route = route;
+                    this.storageRouteData()
+                    this.route.editor.events.add('waypointdragend', (e) => {
+                        switch (e.get('wayPoint').options._name) {
+                            case 'startWayPoint':
+                                this.from.coords = e.get('wayPoint').geometry.getCoordinates();
+                                ymaps.geocode(this.from.coords).then(res => {
+                                    const data = res.geoObjects.get(0).properties.getAll();
+                                    document.getElementById('from').value = data.text;
+                                });
+                                break;
+                            case 'finishWayPoint':
+                                this.to.coords = e.get('wayPoint').geometry.getCoordinates();
+                                ymaps.geocode(this.to.coords).then(res => {
+                                    const data = res.geoObjects.get(0).properties.getAll();
+                                    document.getElementById('to').value = data.text;
+                                });
+                                break;
+                        }
+                        this.storageRouteData()
+                        console.log(e.get('wayPoint').options._name)
+                    });
+                    this.route.editor.start({
+                        options: {
+                            addViaPoints: false,
+                            addWayPoints: false,
+                            editViaPoints: false
+                        }
+                    });
+                    this.map.geoObjects.add(route);
+                });
+            }
+        }
+    }
+
+</script>
+</body>
+</html>

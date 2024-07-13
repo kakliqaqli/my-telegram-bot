@@ -1,0 +1,90 @@
+version: '3.1'
+services:
+  postgres:
+    image: postgres:14-alpine3.17
+    ports:
+      - "5533:5432"
+    env_file:
+      - local.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: sl-bot-backend:latest
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - ./local.env
+    environment:
+      - POSTGRES_HOST=postgres
+    volumes:
+      - ./backend:/backend
+    command: sh -c "python manage.py makemigrations && \
+      python manage.py migrate && \
+      (python manage.py createsuperuser --username admin --email admin@mail.ru --noinput || true) && \
+      python manage.py collectstatic --noinput && \
+      nohup python start_service.py & \
+      wait"
+
+  celery_worker:
+    image: sl-bot-backend:latest
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - POSTGRES_HOST=postgres
+    volumes:
+      - ./backend:/backend
+    env_file:
+      - ./local.env
+    command: celery -A settings worker --concurrency=2 --pool=threads --loglevel=info
+    restart: unless-stopped
+
+  celery_beat:
+    image: sl-bot-backend:latest
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - POSTGRES_HOST=postgres
+    volumes:
+      - ./backend:/backend
+    env_file:
+      - ./local.env
+    command: celery -A settings beat --loglevel=info
+    restart: unless-stopped
+
+  tg_bot:
+    build:
+      context: ./tg_bot
+      dockerfile: Dockerfile
+    depends_on:
+      - backend
+    env_file:
+      - ./local.env
+    volumes:
+      - ./tg_bot:/tg_bot
+      - ./backend/media:/tg_bot/media
+    command: sh -c "sleep 1 && python main.py"
+
+  redis:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8100:80"
+    volumes:
+      - ./dev.nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - tg_bot
+
+
+volumes:
+  postgres_data:

@@ -1,0 +1,104 @@
+{% extends "admin_tools/dashboard/module.html" %}
+{% load admin_tools_dashboard_tags %}
+
+{% block module_content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.3.0/Chart.bundle.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 45vh;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+    #chart {
+        width: 100% !important;
+        height: 100% !important;
+    }
+    #module_{{ module.id }}{
+        height: 50vh;
+    }
+</style>
+<div class="chart-container">
+    <canvas id="chart"></canvas>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        let delay = 3000;
+        let activeRequests = 0;
+
+        function checkAndMoveModule() {
+            setTimeout(() => {
+                if (activeRequests > 0) {
+                    delay += 3000;
+                }
+                var moduleElement = document.getElementById('module_{{ module.id }}');
+                var dashboardElement = document.getElementById('dashboard');
+                if (moduleElement && dashboardElement) {
+                    dashboardElement.insertBefore(moduleElement, dashboardElement.firstChild);
+                }
+                var ctx = document.getElementById("chart").getContext('2d');
+                var gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+                gradient.addColorStop(0, 'rgba(255, 99, 132, 0.5)');
+                gradient.addColorStop(1, 'rgba(255, 99, 132, 0)');
+
+                var chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [
+                            {% for date in module.children.dates %}"{{ date }}",{% endfor %}
+                        ],
+                        datasets: [
+                            {
+                                label: 'Количество новых пользователей за день',
+                                backgroundColor: gradient, // Используем градиент для фона
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                data: [{% for amount in module.children.amount %}{{ amount }},{% endfor %}],
+                                borderWidth: 1,
+                                fill: true,
+                                tension: 0.4,
+                                yAxisID: 'y-axis-1'
+                            },
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            yAxes: [{
+                                id: 'y-axis-1',
+                                type: 'linear',
+                                position: 'left',
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }]
+                        }
+                    }
+                });
+
+                // Сбросить задержку обратно на 500, если нет активных запросов
+                if (activeRequests === 0) {
+                    delay = 3000;
+                }
+            }, delay);
+        }
+
+        (function(open) {
+            XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
+                this.addEventListener('readystatechange', function() {
+                    console.log(this)
+                    if (this.readyState === 1) {
+                        activeRequests++;
+                    } else if (this.readyState === 4) {
+                        activeRequests--;
+                    }
+                }, false);
+                open.call(this, method, url, async, user, pass);
+            };
+        })(XMLHttpRequest.prototype.open);
+
+        checkAndMoveModule();
+    });
+</script>
+{% endblock %}

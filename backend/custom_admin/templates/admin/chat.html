@@ -1,0 +1,261 @@
+{% if order %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<style>
+    .messages::-webkit-scrollbar {
+        width: 5px;
+    }
+    .messages::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .messages::-webkit-scrollbar-thumb {
+        background-color: #00000032;
+        border-radius: 20px;
+    }
+
+    .center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .input {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        width: 100%;
+        padding: 0px !important;
+    }
+
+    .input textarea {
+        min-height: 1em !important;
+        max-height: 4em !important;
+        outline: none;
+        padding: 5px;
+        font-size: 16px;
+    }
+
+    .chat {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: 100%;
+        min-height: 75vh;
+        z-index: 2;
+        box-sizing: border-box;
+        border-radius: 1rem;
+        background: var(--body-bg);
+    }
+
+    .chat .messages {
+        padding: 1rem;
+        background: var(--body-bg);
+        flex-shrink: 2;
+        overflow-y: auto;
+        height: 70vh;
+        display: flex;
+        flex-direction: column;
+        border-radius: 15px;
+        margin-bottom: 10px;
+        -webkit-box-shadow: 0px 0px 15px -3px rgba(34, 60, 80, 0.2);
+        -moz-box-shadow: 0px 0px 15px -3px rgba(34, 60, 80, 0.2);
+        box-shadow: 0px 0px 15px -3px rgba(34, 60, 80, 0.2);
+    }
+
+    .chat .messages .time {
+        font-size: 0.8rem;
+        background: var(--body-fg);
+        padding: 0.25rem 1rem;
+        border-radius: 2rem;
+        color: var(--body-bg);
+        width: fit-content;
+        margin: 0 auto;
+    }
+
+    .chat .messages .message {
+        box-sizing: border-box;
+        padding: 0.5rem 1rem;
+        margin: 1rem;
+        background: #fff;
+        border-radius: 1.125rem 1.125rem 1.125rem 0;
+        min-height: 2.25rem;
+        width: -webkit-fit-content;
+        width: -moz-fit-content;
+        width: fit-content;
+        max-width: 66%;
+        box-shadow: 0 0 2rem rgba(0, 0, 0, 0.075), 0rem 1rem 1rem -1rem rgba(0, 0, 0, 0.1);
+        word-wrap: break-word; /* Позволяет словам переноситься на новую строку */
+        white-space: normal; /* Убедитесь, что white-space не наследует nowrap где-то из родительских элементов */
+    }
+
+    .chat .messages .message.manager {
+        margin: 1rem 1rem 1rem auto;
+        border-radius: 1.125rem 1.125rem 0 1.125rem;
+        background: #005c4b;
+        color: white;
+    }
+    .chat .messages .message.client {
+        margin: auto 1rem 1rem 1rem;
+        border-radius: 1.125rem 1.125rem 1.125rem 0;
+        background: #1d282f;
+        color: white;
+    }
+
+    .chat .input {
+        box-sizing: border-box;
+        flex-basis: 4rem;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        padding: 0 0.5rem 0 1.5rem;
+    }
+
+    .chat .input input, textarea {
+        border: none;
+        background-image: none;
+        background-color: white;
+        padding: 0.5rem 1rem;
+        margin-right: 1rem;
+        border-radius: 1.125rem;
+        flex-grow: 2;
+        box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1), 0rem 1rem 1rem -1rem rgba(0, 0, 0, 0.2);
+        font-family: "Red hat Display", sans-serif;
+        font-weight: 400;
+        letter-spacing: 0.025em;
+        color: #333;
+        outline: none;
+    }
+
+    .chat .input input::placeholder {
+        color: #999;
+    }
+
+    #send-chat-message-form {
+        display: flex;
+        gap: 25px;
+    }
+
+    #send-chat-message-form div label {
+        display: none;
+    }
+
+    #send-chat-message-form div {
+        width: 100%;
+    }
+
+    #id_text {
+        max-width: 40vw;
+        background-color: #bebebe32;
+        border-radius: 45px;
+    }
+
+    #message-send-button {
+        flex: 1;
+    }
+</style>
+  
+<div class="center">
+    <div class="chat">
+        <div class="messages" id="chat">
+        </div>
+        <div class="input">
+            <textarea id="message-input" type="text" placeholder="Введите сообщение..."></textarea>
+            <input id="message-send-button" type="button" value="Отправить">
+        </div>
+    </div>
+</div>
+<script>
+    const orderId = "{{ order.id }}";
+    const managerId = "{{ user.id }}";
+    const apiUrl = window.location.origin + "{{ FORCE_SCRIPT_NAME }}" + "/api/order/chat/";
+
+    function createMessageElement(message, lastDate) {
+        const container = document.createElement("div");
+
+        // Create time element only if the date is different
+        const createdAt = new Date(message.created_at).toLocaleDateString();
+        if (createdAt !== lastDate) {
+            const timeDiv = document.createElement("div");
+            timeDiv.classList.add("time");
+            timeDiv.textContent = createdAt;
+            container.appendChild(timeDiv);
+        }
+
+        // Create message element
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message", message.manager_id ? "manager" : "client");
+        messageDiv.innerHTML = message.text.replace(/\n/g, "<br>");
+        container.appendChild(messageDiv);
+
+        return container;
+    }
+
+    async function fetchChatMessages() {
+        try {
+            const response = await fetch(apiUrl+"?order_id="+orderId);
+            const messages = await response.json();
+            const chat = document.getElementById("chat");
+            chat.innerHTML = "";
+
+            let lastDate = "";
+            messages.forEach(message => {
+                const messageElement = createMessageElement(message, lastDate);
+                lastDate = new Date(message.created_at).toLocaleDateString();
+                chat.appendChild(messageElement);
+            });
+            scrollToBottom();
+        } catch (error) {
+            console.error("Failed to fetch chat messages.", error);
+        }
+    }
+
+    async function sendMessage() {
+        const text = document.getElementById("message-input").value;
+        if (!text.trim()) return;
+
+        const data = {
+            order_id: orderId,
+            manager_id: managerId,
+            text: text.replace(/\n/g, "\\n"),
+        };
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Csrftoken": "{{ csrf_token }}",
+                },
+                body: JSON.stringify(data),
+            });
+
+            if (response.ok) {
+                document.getElementById("message-input").value = "";
+                await fetchChatMessages();
+            } else {
+                console.error("Failed to send message.");
+            }
+        } catch (error) {
+            console.error("Error occurred while sending message.", error);
+        }
+    }
+
+    function scrollToBottom() {
+        var chatDiv = document.getElementById("chat");
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+
+    document.getElementById("message-send-button").addEventListener("click", sendMessage);
+    document.getElementById("message-input").addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && event.shiftKey) {
+            return
+        } else if (event.key === "Enter") {
+            event.preventDefault(); // Предотвращаем стандартное действие Enter, чтобы не отправлять форму
+            sendMessage();
+        }
+    });
+    setInterval(fetchChatMessages, 5000);
+    fetchChatMessages();
+</script>
+{% endif %}

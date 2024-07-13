@@ -1,0 +1,24 @@
+{% extends "admin_tools/dashboard/module.html" %}
+
+{% block module_content %}
+    <table>
+        <thead>
+            <tr>
+                <th style="word-break: unset;">Товар</th>
+                <th style="word-break: unset;">Количество заказов</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in module.children.popular_products %}
+            <tr>
+                <td>
+                    <a href="/admin/api/product/{{ product.product_id }}/change/">
+                        {{ product.product }}
+                    <a/>
+                </td>
+                <td>{{ product.amount }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
